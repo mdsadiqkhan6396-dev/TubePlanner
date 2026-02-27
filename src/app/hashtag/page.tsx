@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import {
     Hash, Loader2, Flame, TrendingUp, Eye, Video, Copy, Check,
-    Download, Search, SortAsc, ChevronDown
+    Download, Search, SortAsc, ChevronDown, ArrowRight
 } from "lucide-react";
 import { HashtagCard } from "@/components/features/HashtagCard";
 import { HashtagFilters } from "@/components/features/HashtagFilters";
@@ -149,6 +150,33 @@ export default function HashtagsPage() {
 
     return (
         <main className="min-h-screen bg-background text-foreground" suppressHydrationWarning>
+            {/* Navigation Header */}
+            <nav className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-2">
+                        <svg className="h-8 w-8 text-[#FF0000]" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                        </svg>
+                        <span className="text-xl font-bold">TubePlanner</span>
+                    </Link>
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/hashtag"
+                            className="px-4 py-2 text-sm font-medium text-primary border border-primary/30 bg-primary/5 rounded-lg"
+                        >
+                            Hashtag
+                        </Link>
+                        <Link
+                            href="/video-scheduler"
+                            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+                        >
+                            Go to Dashboard
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                    </div>
+                </div>
+            </nav>
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8" suppressHydrationWarning>
 
                 {/* Header */}
