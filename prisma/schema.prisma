@@ -1,0 +1,447 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// TubePlanner - Database Schema
+// ═══════════════════════════════════════════════════════════════════════════════
+// All sensitive data (tokens) are encrypted before storage
+// ═══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// User Model - Core user data
+// ─────────────────────────────────────────────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  channels      YouTubeChannel[]
+  videos        Video[]
+  drafts        VideoDraft[]
+  templates     VideoTemplate[]
+  schedules     ScheduledUpload[]
+  apiUsage      ApiUsage[]
+  
+  // User preferences
+  settings      UserSettings?
+  
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// NextAuth.js Models
+// ─────────────────────────────────────────────────────────────────────────────────
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  
+  // ENCRYPTED: OAuth tokens stored encrypted
+  refresh_token     String? @db.Text // Encrypted
+  access_token      String? @db.Text // Encrypted
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text // Encrypted
+  session_state     String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  
+  // Security tracking
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// YouTube Channel Model
+// ─────────────────────────────────────────────────────────────────────────────────
+model YouTubeChannel {
+  id              String   @id // YouTube channel ID
+  userId          String
+  
+  // Channel info
+  title           String
+  description     String?  @db.Text
+  customUrl       String?
+  thumbnailUrl    String?
+  bannerUrl       String?
+  
+  // Statistics (cached, updated periodically)
+  subscriberCount BigInt   @default(0)
+  videoCount      Int      @default(0)
+  viewCount       BigInt   @default(0)
+  
+  // ENCRYPTED: OAuth tokens
+  accessToken     String   @db.Text // Encrypted
+  refreshToken    String?  @db.Text // Encrypted
+  tokenExpiresAt  DateTime?
+  
+  // Account info
+  accountEmail    String?
+  accountName     String?
+  isBrandAccount  Boolean  @default(false)
+  
+  // Status
+  isActive        Boolean  @default(true)
+  connectedAt     DateTime @default(now())
+  lastSyncAt      DateTime?
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videos          Video[]
+  schedules       ScheduledUpload[]
+  analytics       ChannelAnalytics[]
+  
+  @@index([userId])
+  @@map("youtube_channels")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// Video Models
+// ─────────────────────────────────────────────────────────────────────────────────
+model Video {
+  id              String   @id @default(cuid())
+  youtubeId       String?  @unique // YouTube video ID after upload
+  userId          String
+  channelId       String
+  
+  // Video details
+  title           String   @db.VarChar(100)
+  description     String   @db.Text
+  tags            String[] // Array of tags
+  hashtags        String[] // Array of hashtags
+  categoryId      String   @default("22")
+  
+  // Media
+  thumbnailUrl    String?
+  thumbnailGcsUrl String?  // Google Cloud Storage URL
+  videoGcsUrl     String?  // If stored in GCS before upload
+  duration        Int?     // Duration in seconds
+  
+  // Settings
+  privacyStatus   PrivacyStatus @default(PRIVATE)
+  madeForKids     MadeForKids   @default(NO)
+  ageRestriction  Boolean       @default(false)
+  license         License       @default(YOUTUBE)
+  language        String        @default("en")
+  
+  // Features
+  allowComments   Boolean  @default(true)
+  allowEmbedding  Boolean  @default(true)
+  publishToFeed   Boolean  @default(true)
+  isPremiere      Boolean  @default(false)
+  
+  // Status
+  status          VideoStatus @default(DRAFT)
+  publishedAt     DateTime?
+  scheduledFor    DateTime?
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel         YouTubeChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([channelId])
+  @@index([youtubeId])
+  @@index([status])
+  @@map("videos")
+}
+
+model VideoDraft {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  
+  // Draft content
+  title           String   @db.VarChar(100)
+  description     String   @db.Text
+  tags            String[]
+  hashtags        String[]
+  categoryId      String   @default("22")
+  
+  // Settings
+  privacyStatus   PrivacyStatus @default(PRIVATE)
+  
+  // Thumbnail (base64 or URL)
+  thumbnailData   String?  @db.Text
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("video_drafts")
+}
+
+model VideoTemplate {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  
+  // Template content
+  titleTemplate   String   @db.VarChar(100)
+  descTemplate    String   @db.Text
+  tags            String[]
+  hashtags        String[]
+  categoryId      String   @default("22")
+  
+  // Default settings
+  privacyStatus   PrivacyStatus @default(PRIVATE)
+  madeForKids     MadeForKids   @default(NO)
+  license         License       @default(YOUTUBE)
+  language        String        @default("en")
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("video_templates")
+}
+
+model ScheduledUpload {
+  id              String   @id @default(cuid())
+  userId          String
+  channelId       String
+  
+  // Video details
+  title           String   @db.VarChar(100)
+  description     String   @db.Text
+  tags            String[]
+  categoryId      String   @default("22")
+  privacyStatus   PrivacyStatus
+  
+  // File info
+  videoFileName   String
+  videoFileSize   BigInt
+  videoGcsUrl     String   // Google Cloud Storage URL
+  thumbnailGcsUrl String?
+  
+  // Schedule
+  scheduledFor    DateTime
+  timezone        String   @default("UTC")
+  
+  // Status
+  status          ScheduleStatus @default(PENDING)
+  youtubeId       String?        // After successful upload
+  error           String?
+  attempts        Int            @default(0)
+  lastAttemptAt   DateTime?
+  completedAt     DateTime?
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel         YouTubeChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([channelId])
+  @@index([scheduledFor])
+  @@index([status])
+  @@map("scheduled_uploads")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// Analytics Models
+// ─────────────────────────────────────────────────────────────────────────────────
+model ChannelAnalytics {
+  id              String   @id @default(cuid())
+  channelId       String
+  date            DateTime @db.Date
+  
+  // Overview metrics
+  views           BigInt   @default(0)
+  subscribers     Int      @default(0)
+  subscribersGained Int    @default(0)
+  subscribersLost Int      @default(0)
+  watchTimeMinutes BigInt  @default(0)
+  
+  // Engagement
+  likes           Int      @default(0)
+  comments        Int      @default(0)
+  shares          Int      @default(0)
+  
+  // Revenue (if monetized)
+  estimatedRevenue Decimal? @db.Decimal(10, 2)
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  channel         YouTubeChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  @@unique([channelId, date])
+  @@index([channelId])
+  @@index([date])
+  @@map("channel_analytics")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// User Settings
+// ─────────────────────────────────────────────────────────────────────────────────
+model UserSettings {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  
+  // Default upload settings
+  defaultPrivacy      PrivacyStatus @default(PRIVATE)
+  defaultCategory     String        @default("22")
+  defaultLanguage     String        @default("en")
+  
+  // Preferences
+  autoSaveDrafts      Boolean  @default(true)
+  rememberLastChannel Boolean  @default(true)
+  emailNotifications  Boolean  @default(true)
+  
+  // Theme
+  theme               Theme    @default(SYSTEM)
+  
+  // Metadata
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Relations
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_settings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// API Usage Tracking (for rate limiting and quota management)
+// ─────────────────────────────────────────────────────────────────────────────────
+model ApiUsage {
+  id              String   @id @default(cuid())
+  userId          String
+  
+  // Usage tracking
+  endpoint        String
+  method          String
+  quotaUsed       Int      @default(0)
+  
+  // Request info (anonymized)
+  ipHash          String?  // Hashed IP for security
+  
+  // Timestamp
+  timestamp       DateTime @default(now())
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([timestamp])
+  @@index([endpoint])
+  @@map("api_usage")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// Rate Limit Tracking
+// ─────────────────────────────────────────────────────────────────────────────────
+model RateLimit {
+  id              String   @id
+  requests        Int      @default(0)
+  windowStart     DateTime
+  
+  @@map("rate_limits")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────────
+enum PrivacyStatus {
+  PUBLIC
+  PRIVATE
+  UNLISTED
+}
+
+enum MadeForKids {
+  YES
+  NO
+  UNSET
+}
+
+enum License {
+  YOUTUBE
+  CREATIVE_COMMON
+}
+
+enum VideoStatus {
+  DRAFT
+  UPLOADING
+  PROCESSING
+  PUBLISHED
+  SCHEDULED
+  FAILED
+}
+
+enum ScheduleStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}

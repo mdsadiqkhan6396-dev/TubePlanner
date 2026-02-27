@@ -1,0 +1,267 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TubePlanner - Global Styles (Tailwind v4)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* Base colors */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 84% 4.9%);
+  
+  /* Card colors */
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222.2 84% 4.9%);
+  
+  /* Popover colors */
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222.2 84% 4.9%);
+  
+  /* Primary - YouTube Red */
+  --color-primary: hsl(0 72% 51%);
+  --color-primary-foreground: hsl(210 40% 98%);
+  
+  /* Secondary */
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+  
+  /* Muted */
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  
+  /* Accent */
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+  
+  /* Destructive */
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  
+  /* Border/Input colors (avoiding conflicts with Tailwind utilities) */
+  --color-border-default: hsl(214.3 31.8% 91.4%);
+  --color-input-bg: hsl(214.3 31.8% 91.4%);
+  --color-ring-focus: hsl(0 72% 51%);
+  
+  /* Radius */
+  --radius: 0.5rem;
+  
+  /* Animation */
+  --animate-shimmer: shimmer 2s infinite;
+}
+
+/* Light mode (default) - CSS Variable aliases for component compatibility */
+:root {
+  --background: #ffffff;
+  --foreground: #1a1a2e;
+  --card: #ffffff;
+  --card-foreground: #1a1a2e;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a2e;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #1f2937;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #f3f4f6;
+  --accent-foreground: #1f2937;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #dc2626;
+  --radius: 0.5rem;
+  
+  /* YouTube brand colors */
+  --youtube-red: #FF0000;
+  --youtube-dark: #282828;
+  --youtube-light: #F9F9F9;
+}
+
+/* Dark mode */
+.dark {
+  --background: #0f0f1a;
+  --foreground: #f5f5f5;
+  --card: #1a1a2e;
+  --card-foreground: #f5f5f5;
+  --popover: #1a1a2e;
+  --popover-foreground: #f5f5f5;
+  --primary: #ef4444;
+  --primary-foreground: #ffffff;
+  --secondary: #262640;
+  --secondary-foreground: #f5f5f5;
+  --muted: #262640;
+  --muted-foreground: #9ca3af;
+  --accent: #262640;
+  --accent-foreground: #f5f5f5;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #333355;
+  --input: #333355;
+  --ring: #ef4444;
+  
+  --color-background: #0f0f1a;
+  --color-foreground: #f5f5f5;
+  --color-card: #1a1a2e;
+  --color-card-foreground: #f5f5f5;
+  --color-border-default: #333355;
+  --color-muted: #262640;
+  --color-muted-foreground: #9ca3af;
+  --color-primary: #ef4444;
+  --color-secondary: #262640;
+}
+
+/* Base styles */
+* {
+  border-color: var(--color-border-default);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-ring-focus);
+}
+
+/* YouTube-style button */
+.btn-youtube {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background-color: #FF0000;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  transition: background-color 0.15s ease;
+}
+
+.btn-youtube:hover {
+  background-color: #CC0000;
+}
+
+.btn-youtube:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #FF0000;
+}
+
+.btn-youtube:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Glass card effect */
+.glass-card {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  backdrop-filter: blur(16px);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(to right, var(--color-primary), #f97316);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Loading shimmer */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-muted);
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+/* Hide scrollbar but allow scrolling */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: rgba(107, 114, 128, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.4);
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
